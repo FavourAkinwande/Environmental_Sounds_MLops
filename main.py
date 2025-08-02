@@ -293,6 +293,30 @@ async def retrain_model(zipfile_data: UploadFile = File(...)):
     X_scaled = scaler_new.fit_transform(X)
 
     X_train, X_val, y_train, y_val = train_test_split(X_scaled, y_cat, test_size=0.2, stratify=y_encoded)
+    
+    # Data augmentation - add noise to training data
+    print("Applying data augmentation...")
+    X_train_augmented = []
+    y_train_augmented = []
+    
+    for i in range(len(X_train)):
+        # Original sample
+        X_train_augmented.append(X_train[i])
+        y_train_augmented.append(y_train[i])
+        
+        # Add noise to create augmented samples
+        noise = np.random.normal(0, 0.01, X_train[i].shape)
+        X_train_augmented.append(X_train[i] + noise)
+        y_train_augmented.append(y_train[i])
+        
+        # Add more noise for additional augmentation
+        noise2 = np.random.normal(0, 0.02, X_train[i].shape)
+        X_train_augmented.append(X_train[i] + noise2)
+        y_train_augmented.append(y_train[i])
+    
+    X_train = np.array(X_train_augmented)
+    y_train = np.array(y_train_augmented)
+    print(f"Training data augmented from {len(X_scaled)} to {len(X_train)} samples")
 
     # Load existing model for transfer learning (always use filesystem model as base)
     base_model = load_model("audio_classifier_model.h5")
@@ -308,29 +332,48 @@ async def retrain_model(zipfile_data: UploadFile = File(...)):
     model_new.add(Dense(len(le_new.classes_), activation='softmax'))
     
     # Optionally freeze some layers for transfer learning
-    # Unfreeze the last few layers for fine-tuning
-    for layer in model_new.layers[-3:]:  # Unfreeze last 3 layers
-        layer.trainable = True
-    for layer in model_new.layers[:-3]:  # Freeze earlier layers
+    # Better transfer learning strategy
+    # First, freeze all layers and train just the output layer
+    for layer in model_new.layers:
         layer.trainable = False
+    model_new.layers[-1].trainable = True  # Only train output layer initially
+    
+    # Compile with higher learning rate for output layer training
+    optimizer = Adam(learning_rate=0.01)
+    model_new.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+    
+    # Train just the output layer first
+    print("Training output layer...")
+    history1 = model_new.fit(
+        X_train, y_train, 
+        validation_data=(X_val, y_val), 
+        epochs=20, 
+        batch_size=16,
+        verbose=1
+    )
+    
+    # Now unfreeze more layers for fine-tuning
+    for layer in model_new.layers[-4:]:  # Unfreeze last 4 layers
+        layer.trainable = True
 
     # Use better optimizer with learning rate scheduling
     from tensorflow.keras.optimizers import Adam
-    from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping
+    from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint
     
-    optimizer = Adam(learning_rate=0.001)
+    # Lower learning rate for better convergence
+    optimizer = Adam(learning_rate=0.0001)
     model_new.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
     
     # Add callbacks for better training
-    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=5, min_lr=1e-7, verbose=1)
-    early_stopping = EarlyStopping(monitor='val_loss', patience=15, restore_best_weights=True, verbose=1)
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=3, min_lr=1e-8, verbose=1)
+    early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True, verbose=1)
     
-    # Train with more epochs and better batch size
+    # Train with more epochs and smaller batch size for better generalization
     history = model_new.fit(
         X_train, y_train, 
         validation_data=(X_val, y_val), 
-        epochs=30, 
-        batch_size=32,
+        epochs=100, 
+        batch_size=16,
         callbacks=[reduce_lr, early_stopping],
         verbose=1
     )
