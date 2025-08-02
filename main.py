@@ -162,14 +162,23 @@ def extract_features(file_path, n_mfcc=13, n_chroma=12, n_mel=128):
             # If spectral features fail, add zeros
             features.extend([0, 0, 0, 0])
 
-        return np.concatenate([np.array(f).flatten() for f in features])
+        feature_vector = np.concatenate([np.array(f).flatten() for f in features])
+        
+        # Ensure the feature vector has exactly 340 features (original model expectation)
+        if len(feature_vector) < 340:
+            # Pad with zeros if too short
+            padding = np.zeros(340 - len(feature_vector))
+            feature_vector = np.concatenate([feature_vector, padding])
+        elif len(feature_vector) > 340:
+            # Truncate if too long
+            feature_vector = feature_vector[:340]
+        
+        return feature_vector
     except Exception as e:
         print(f"Error extracting features from {file_path}: {e}")
-        # Return a dummy feature vector that matches expected size
-        # This is a fallback to prevent crashes
-        expected_size = n_mfcc * 4 + n_mel * 2 + n_chroma * 2 + 4  # Approximate size
-        print(f"Returning dummy features of size {expected_size}")
-        return np.zeros(expected_size)
+        # Return exactly 340 features as expected by the model
+        print(f"Returning dummy features of size 340")
+        return np.zeros(340)
 
 # ---------- Predict Endpoint ----------
 @app.post("/predict")
