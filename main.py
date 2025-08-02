@@ -21,6 +21,10 @@ os.environ['LIBROSA_USE_CACHE'] = '0'
 os.environ['NUMBA_CACHE_DIR'] = '/tmp'
 os.environ['NUMBA_DISABLE_JIT'] = '1'
 
+# Disable numba completely to avoid JIT compilation issues
+import numba
+numba.config.DISABLE_JIT = True
+
 app = FastAPI()
 
 # Connect to MongoDB (adjust URI as needed)
@@ -121,16 +125,12 @@ def extract_features(file_path, n_mfcc=13, n_chroma=12, n_mel=128):
         mel_db = librosa.power_to_db(mel, ref=np.max)
         features.extend([np.mean(mel_db, axis=1), np.std(mel_db, axis=1)])
 
-        # Basic spectral features
+        # Basic spectral features (avoiding numba-heavy functions)
         spectral_centroids = librosa.feature.spectral_centroid(y=y, sr=sr)
-        spectral_rolloff = librosa.feature.spectral_rolloff(y=y, sr=sr)
-        spectral_bandwidth = librosa.feature.spectral_bandwidth(y=y, sr=sr)
         zero_crossing_rate = librosa.feature.zero_crossing_rate(y)
 
         features.extend([
             np.mean(spectral_centroids), np.std(spectral_centroids),
-            np.mean(spectral_rolloff), np.std(spectral_rolloff),
-            np.mean(spectral_bandwidth), np.std(spectral_bandwidth),
             np.mean(zero_crossing_rate), np.std(zero_crossing_rate)
         ])
 
@@ -145,25 +145,16 @@ def extract_features(file_path, n_mfcc=13, n_chroma=12, n_mel=128):
                 return None
             y = y / (np.max(np.abs(y)) + 1e-6)
             
-            # Extract only basic features
+            # Extract only MFCC features (most reliable)
             mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
             mfcc_features = np.concatenate([
                 np.mean(mfcc, axis=1), np.std(mfcc, axis=1)
             ])
             
-            spectral_centroids = librosa.feature.spectral_centroid(y=y, sr=sr)
-            zero_crossing_rate = librosa.feature.zero_crossing_rate(y)
-            
-            basic_features = np.concatenate([
-                mfcc_features,
-                [np.mean(spectral_centroids), np.std(spectral_centroids)],
-                [np.mean(zero_crossing_rate), np.std(zero_crossing_rate)]
-            ])
-            
-            print(f"Using fallback feature extraction for {file_path}")
-            return basic_features
+            print(f"Using minimal MFCC feature extraction for {file_path}")
+            return mfcc_features
         except Exception as fallback_error:
-            print(f"Fallback feature extraction also failed for {file_path}: {fallback_error}")
+            print(f"Minimal feature extraction also failed for {file_path}: {fallback_error}")
             return None
 
 # ---------- Predict Endpoint ----------
