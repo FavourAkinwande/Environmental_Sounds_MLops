@@ -17,6 +17,10 @@ import datetime
 os.environ['LIBROSA_CACHE_DIR'] = '/tmp'
 os.environ['LIBROSA_USE_CACHE'] = '0'
 
+# Disable numba caching which can cause issues in containers
+os.environ['NUMBA_CACHE_DIR'] = '/tmp'
+os.environ['NUMBA_DISABLE_JIT'] = '1'
+
 app = FastAPI()
 
 # Connect to MongoDB (adjust URI as needed)
@@ -25,7 +29,7 @@ db = mongo_client["environmental_sounds"]
 retrain_collection = db["retrain_data"]
 models_collection = db["models"]
 
-# Function to load latest model from MongoDB
+# Function to load latest model from MongoDB (for retraining)
 def load_latest_model():
     try:
         # Get the most recent model from MongoDB
@@ -72,8 +76,21 @@ def load_latest_model():
         print("Label classes:", le.classes_)
         return model, le, scaler
 
-# Load existing model & encoders
-model, le, scaler = load_latest_model()
+# Function to load original model from filesystem (for prediction)
+def load_original_model():
+    try:
+        model = load_model("audio_classifier_model.h5")
+        le = joblib.load("label_encoder.pkl")
+        scaler = joblib.load("scaler.pkl")
+        print("Loaded original model from filesystem")
+        print("Label classes:", le.classes_)
+        return model, le, scaler
+    except Exception as e:
+        print(f"Error loading original model: {e}")
+        return None, None, None
+
+# Load original model & encoders for prediction
+model, le, scaler = load_original_model()
 
 RETRAIN_DIR = "retrain_data"
 
@@ -152,6 +169,10 @@ def extract_features(file_path, n_mfcc=13, n_chroma=12, n_mel=128):
 # ---------- Predict Endpoint ----------
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
+    # Check if model is loaded
+    if model is None or le is None or scaler is None:
+        return JSONResponse(status_code=500, content={"error": "Model not loaded properly."})
+    
     # Use tempfile for proper temporary file handling
     with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
         temp_filename = temp_file.name
@@ -259,7 +280,7 @@ async def retrain_model(zipfile_data: UploadFile = File(...)):
 
     X_train, X_val, y_train, y_val = train_test_split(X_scaled, y_cat, test_size=0.2, stratify=y_encoded)
 
-    # Load existing model for transfer learning
+    # Load existing model for transfer learning (always use filesystem model as base)
     base_model = load_model("audio_classifier_model.h5")
     
     # Use the base model as starting point
