@@ -102,10 +102,10 @@ def load_latest_model():
     except Exception as e:
         print(f"Error loading from database: {e}")
         print("Falling back to filesystem...")
-        model = load_model("audio_classifier_model.h5")
-        le = joblib.load("label_encoder.pkl")
+model = load_model("audio_classifier_model.h5")
+le = joblib.load("label_encoder.pkl")
         scaler = joblib.load("scaler.pkl")
-        print("Label classes:", le.classes_)
+print("Label classes:", le.classes_)
         return model, le, scaler
 
 # Function to load original model from filesystem (for prediction)
@@ -113,7 +113,7 @@ def load_original_model():
     try:
         model = load_model("audio_classifier_model.h5")
         le = joblib.load("label_encoder.pkl")
-        scaler = joblib.load("scaler.pkl")
+scaler = joblib.load("scaler.pkl")
         print("Loaded original model from filesystem")
         print("Label classes:", le.classes_)
         return model, le, scaler
@@ -144,8 +144,8 @@ def extract_features(file_path, n_mfcc=13, n_chroma=12, n_mel=128):
 
         # MFCC features (most reliable)
         try:
-            mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n_mfcc)
-            features.extend([np.mean(mfcc, axis=1), np.std(mfcc, axis=1), np.max(mfcc, axis=1), np.min(mfcc, axis=1)])
+        mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=n_mfcc)
+        features.extend([np.mean(mfcc, axis=1), np.std(mfcc, axis=1), np.max(mfcc, axis=1), np.min(mfcc, axis=1)])
         except:
             # If MFCC fails, create dummy features
             dummy_mfcc = np.zeros(n_mfcc * 4)
@@ -153,9 +153,9 @@ def extract_features(file_path, n_mfcc=13, n_chroma=12, n_mel=128):
 
         # Mel spectrogram features
         try:
-            mel = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=n_mel)
-            mel_db = librosa.power_to_db(mel, ref=np.max)
-            features.extend([np.mean(mel_db, axis=1), np.std(mel_db, axis=1)])
+        mel = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=n_mel)
+        mel_db = librosa.power_to_db(mel, ref=np.max)
+        features.extend([np.mean(mel_db, axis=1), np.std(mel_db, axis=1)])
         except:
             # If mel fails, create dummy features
             dummy_mel = np.zeros(n_mel * 2)
@@ -183,7 +183,7 @@ def extract_features(file_path, n_mfcc=13, n_chroma=12, n_mel=128):
             zero_crossing_rate = zero_crossings / len(y)
             
             features.extend([spectral_centroid, spectral_centroid_std, zero_crossing_rate, 0])
-        except:
+    except:
             # If spectral features fail, add zeros
             features.extend([0, 0, 0, 0])
 
@@ -218,11 +218,11 @@ async def predict(file: UploadFile = File(...)):
         temp_file.write(await file.read())
 
     try:
-        features = extract_features(temp_filename)
+    features = extract_features(temp_filename)
     finally:
         # Clean up temp file
         try:
-            os.remove(temp_filename)
+    os.remove(temp_filename)
         except:
             pass
 
@@ -233,7 +233,7 @@ async def predict(file: UploadFile = File(...)):
     probs = model.predict(scaled)
     pred_index = np.argmax(probs, axis=1)[0]
     pred_label = le.inverse_transform([pred_index])[0]
-    
+
     # Debug information
     print(f"Feature vector shape: {features.shape}")
     print(f"Scaled features shape: {scaled.shape}")
@@ -253,7 +253,7 @@ async def predict(file: UploadFile = File(...)):
 async def retrain_model(zipfile_data: UploadFile = File(...)):
     # Read the uploaded zip file
     zip_content = await zipfile_data.read()
-    
+
     # Parse zip file in memory
     with zipfile.ZipFile(io.BytesIO(zip_content), 'r') as zip_ref:
         # Find CSV file in the zip
@@ -275,12 +275,12 @@ async def retrain_model(zipfile_data: UploadFile = File(...)):
         
         if label_column is None:
             return {"error": f"No label column found. Available columns: {list(df.columns)}"}
-        
-        features, labels = [], []
+
+    features, labels = [], []
         
         # Process audio files from zip
-        for _, row in df.iterrows():
-            file = row['filename']
+    for _, row in df.iterrows():
+        file = row['filename']
             label = row[label_column]
             
             # Check if audio file exists in zip
@@ -302,9 +302,9 @@ async def retrain_model(zipfile_data: UploadFile = File(...)):
                     except:
                         pass
                 
-                if fvec is not None:
-                    features.append(fvec)
-                    labels.append(label)
+            if fvec is not None:
+                features.append(fvec)
+                labels.append(label)
                     
                     # Store in MongoDB with audio data
                     retrain_collection.insert_one({
@@ -330,7 +330,7 @@ async def retrain_model(zipfile_data: UploadFile = File(...)):
     X_scaled = scaler_new.fit_transform(X)
 
     X_train, X_val, y_train, y_val = train_test_split(X_scaled, y_cat, test_size=0.2, stratify=y_encoded)
-    
+
     # Data augmentation - add noise to training data
     print("Applying data augmentation...")
     X_train_augmented = []
@@ -357,7 +357,7 @@ async def retrain_model(zipfile_data: UploadFile = File(...)):
 
     # Load existing model for transfer learning (always use filesystem model as base)
     base_model = load_model("audio_classifier_model.h5")
-    
+
     # Use the base model as starting point
     model_new = Sequential()
     
@@ -439,7 +439,7 @@ async def retrain_model(zipfile_data: UploadFile = File(...)):
     # Serialize encoders using pickle
     le_bytes = pickle.dumps(le_new)
     scaler_bytes = pickle.dumps(scaler_new)
-    
+
     # Store in MongoDB with metadata
     model_doc = {
         "timestamp": datetime.datetime.now(),
@@ -521,13 +521,23 @@ async def test_model():
         pred_index = np.argmax(probs, axis=1)[0]
         pred_label = le.inverse_transform([pred_index])[0]
         
+        # Test with random features
+        random_features = np.random.normal(0, 1, 340)
+        scaled_random = scaler.transform([random_features])
+        probs_random = model.predict(scaled_random)
+        pred_index_random = np.argmax(probs_random, axis=1)[0]
+        pred_label_random = le.inverse_transform([pred_index_random])[0]
+        
         return {
             "model_loaded": True,
             "classes": le.classes_.tolist(),
             "dummy_prediction": pred_label,
             "dummy_probabilities": dict(zip(le.classes_, probs[0].tolist())),
+            "random_prediction": pred_label_random,
+            "random_probabilities": dict(zip(le.classes_, probs_random[0].tolist())),
             "feature_vector_size": len(dummy_features),
-            "scaler_fitted": hasattr(scaler, 'mean_')
+            "scaler_fitted": hasattr(scaler, 'mean_'),
+            "model_summary": str(model.summary()) if hasattr(model, 'summary') else "No summary available"
         }
     except Exception as e:
         return {"error": f"Model test failed: {str(e)}"}
