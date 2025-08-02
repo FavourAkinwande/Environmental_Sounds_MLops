@@ -19,9 +19,9 @@ db = mongo_client["environmental_sounds"]
 retrain_collection = db["retrain_data"]
 
 # Load existing model & encoders
-model = load_model("audio_classifier_model.h5")
-le = joblib.load("label_encoder.pkl")
-scaler = joblib.load("scaler.pkl")
+model = load_model("./model/audio_classifier_model.h5")
+le = joblib.load("./model/label_encoder.pkl")
+scaler = joblib.load("./model/scaler.pkl")
 
 RETRAIN_DIR = "retrain_data"
 
