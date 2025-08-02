@@ -341,8 +341,8 @@ async def retrain_model(zipfile_data: UploadFile = File(...)):
     model_new.layers[-1].trainable = True  # Only train output layer initially
     
     # Compile with higher learning rate for output layer training
-    optimizer = Adam(learning_rate=0.01)
-    model_new.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+    optimizer1 = Adam(learning_rate=0.01)
+    model_new.compile(optimizer=optimizer1, loss='categorical_crossentropy', metrics=['accuracy'])
     
     # Train just the output layer first
     print("Training output layer...")
@@ -360,8 +360,8 @@ async def retrain_model(zipfile_data: UploadFile = File(...)):
 
     # Use better optimizer with learning rate scheduling
     # Lower learning rate for better convergence
-    optimizer = Adam(learning_rate=0.0001)
-    model_new.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+    optimizer2 = Adam(learning_rate=0.0001)
+    model_new.compile(optimizer=optimizer2, loss='categorical_crossentropy', metrics=['accuracy'])
     
     # Add callbacks for better training
     reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=3, min_lr=1e-8, verbose=1)
