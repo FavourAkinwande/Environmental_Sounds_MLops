@@ -38,6 +38,29 @@ db = mongo_client["environmental_sounds"]
 retrain_collection = db["retrain_data"]
 models_collection = db["models"]
 
+# Function to clean up old data to manage storage
+def cleanup_old_data():
+    try:
+        # Keep only the latest 3 model versions
+        latest_models = list(models_collection.find().sort("timestamp", -1).limit(3))
+        if len(latest_models) >= 3:
+            # Delete older models
+            oldest_timestamp = latest_models[-1]["timestamp"]
+            models_collection.delete_many({"timestamp": {"$lt": oldest_timestamp}})
+            print(f"Cleaned up old model versions")
+        
+        # Keep only recent retrain data (last 1000 records)
+        retrain_count = retrain_collection.count_documents({})
+        if retrain_count > 1000:
+            # Delete oldest retrain data
+            oldest_records = list(retrain_collection.find().sort("upload_timestamp", 1).limit(retrain_count - 1000))
+            if oldest_records:
+                oldest_timestamp = oldest_records[-1]["upload_timestamp"]
+                retrain_collection.delete_many({"upload_timestamp": {"$lt": oldest_timestamp}})
+                print(f"Cleaned up old retrain data, kept {1000} recent records")
+    except Exception as e:
+        print(f"Error during cleanup: {e}")
+
 # Function to load latest model from MongoDB (for retraining)
 def load_latest_model():
     try:
@@ -417,6 +440,9 @@ async def retrain_model(zipfile_data: UploadFile = File(...)):
         "version": timestamp
     }
     
+    # Clean up old data before inserting new model
+    cleanup_old_data()
+    
     # Insert new model version
     models_collection.insert_one(model_doc)
 
@@ -431,3 +457,38 @@ async def retrain_model(zipfile_data: UploadFile = File(...)):
 @app.get("/")
 async def root():
     return {"message": "Environmental Sounds API is running."}
+
+@app.post("/cleanup")
+async def cleanup_database():
+    """Manually trigger database cleanup to free up space"""
+    try:
+        cleanup_old_data()
+        return {"message": "Database cleanup completed successfully"}
+    except Exception as e:
+        return {"error": f"Cleanup failed: {str(e)}"}
+
+@app.get("/storage")
+async def get_storage_info():
+    """Get current storage usage information"""
+    try:
+        model_count = models_collection.count_documents({})
+        retrain_count = retrain_collection.count_documents({})
+        
+        # Get latest model info
+        latest_model = models_collection.find_one(sort=[("timestamp", -1)])
+        latest_model_info = None
+        if latest_model:
+            latest_model_info = {
+                "version": latest_model.get("version"),
+                "timestamp": latest_model.get("timestamp"),
+                "accuracy": latest_model.get("accuracy")
+            }
+        
+        return {
+            "model_versions": model_count,
+            "retrain_records": retrain_count,
+            "latest_model": latest_model_info,
+            "message": "Consider using /cleanup endpoint if storage is high"
+        }
+    except Exception as e:
+        return {"error": f"Failed to get storage info: {str(e)}"}
