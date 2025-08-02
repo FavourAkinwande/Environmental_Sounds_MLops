@@ -179,3 +179,7 @@ async def retrain_model(zipfile_data: UploadFile = File(...)):
         "overall_accuracy": display_accuracy,
         "overall_loss": display_loss
     }
+
+@app.get("/")
+async def root():
+    return {"message": "Environmental Sounds API is running."}
