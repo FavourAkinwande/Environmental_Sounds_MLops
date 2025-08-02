@@ -1,6 +1,6 @@
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
-import os, uuid, zipfile, shutil, io, pickle
+import os, uuid, zipfile, shutil, io, pickle, tempfile
 import numpy as np
 import librosa
 from sklearn.preprocessing import LabelEncoder, StandardScaler
@@ -112,12 +112,19 @@ def extract_features(file_path, n_mfcc=13, n_chroma=12, n_mel=128):
 # ---------- Predict Endpoint ----------
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
-    temp_filename = f"temp_{uuid.uuid4().hex}.wav"
-    with open(temp_filename, "wb") as f:
-        f.write(await file.read())
+    # Use tempfile for proper temporary file handling
+    with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
+        temp_filename = temp_file.name
+        temp_file.write(await file.read())
 
-    features = extract_features(temp_filename)
-    os.remove(temp_filename)
+    try:
+        features = extract_features(temp_filename)
+    finally:
+        # Clean up temp file
+        try:
+            os.remove(temp_filename)
+        except:
+            pass
 
     if features is None:
         return JSONResponse(status_code=400, content={"error": "Invalid audio file."})
@@ -169,26 +176,19 @@ async def retrain_model(zipfile_data: UploadFile = File(...)):
                 # Read audio file from zip
                 audio_content = zip_ref.read(file)
                 
-                # Save temporarily for librosa processing
-                temp_audio_path = f"temp_{uuid.uuid4().hex}.wav"
-                with open(temp_audio_path, "wb") as f:
-                    f.write(audio_content)
+                # Save temporarily for librosa processing using tempfile
+                with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
+                    temp_audio_path = temp_file.name
+                    temp_file.write(audio_content)
                 
-                fvec = extract_features(temp_audio_path)
-                
-                # Clean up temp file with proper error handling
                 try:
-                    os.remove(temp_audio_path)
-                except PermissionError:
-                    # If file is still in use, try again after a short delay
-                    import time
-                    time.sleep(0.1)
+                    fvec = extract_features(temp_audio_path)
+                finally:
+                    # Clean up temp file
                     try:
                         os.remove(temp_audio_path)
                     except:
-                        pass  # Ignore if still can't delete
-                except:
-                    pass  # Ignore other deletion errors
+                        pass
                 
                 if fvec is not None:
                     features.append(fvec)
@@ -269,7 +269,9 @@ async def retrain_model(zipfile_data: UploadFile = File(...)):
 
     # Save model and encoders to MongoDB
     # Save model as HDF5 bytes using temporary file
-    temp_model_path = f"temp_model_{uuid.uuid4().hex}.h5"
+    with tempfile.NamedTemporaryFile(suffix='.h5', delete=False) as temp_file:
+        temp_model_path = temp_file.name
+    
     model_new.save(temp_model_path)
     
     # Read the saved model file
@@ -277,7 +279,10 @@ async def retrain_model(zipfile_data: UploadFile = File(...)):
         model_bytes = f.read()
     
     # Clean up temporary file
-    os.remove(temp_model_path)
+    try:
+        os.remove(temp_model_path)
+    except:
+        pass
     
     # Serialize encoders using pickle
     le_bytes = pickle.dumps(le_new)
@@ -298,21 +303,7 @@ async def retrain_model(zipfile_data: UploadFile = File(...)):
     # Insert new model version
     models_collection.insert_one(model_doc)
 
-    # Clean up any remaining temporary files
-    import time
-    for temp_file in os.listdir("."):
-        if temp_file.startswith("temp_") and (temp_file.endswith(".wav") or temp_file.endswith(".h5")):
-            try:
-                os.remove(temp_file)
-            except PermissionError:
-                # Wait a bit and try again
-                time.sleep(0.1)
-                try:
-                    os.remove(temp_file)
-                except:
-                    pass  # Give up if still can't delete
-            except:
-                pass  # Ignore other errors
+    # Cleanup is handled automatically by tempfile
 
     return {
         "message": "Model retrained and updated successfully.",
