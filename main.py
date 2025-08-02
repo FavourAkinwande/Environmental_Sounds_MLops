@@ -8,6 +8,8 @@ from sklearn.model_selection import train_test_split
 from tensorflow.keras.models import load_model, Sequential
 from tensorflow.keras.layers import Dense, Dropout, BatchNormalization
 from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint
 import joblib
 from pymongo import MongoClient
 import pandas as pd
@@ -357,9 +359,6 @@ async def retrain_model(zipfile_data: UploadFile = File(...)):
         layer.trainable = True
 
     # Use better optimizer with learning rate scheduling
-    from tensorflow.keras.optimizers import Adam
-    from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint
-    
     # Lower learning rate for better convergence
     optimizer = Adam(learning_rate=0.0001)
     model_new.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
