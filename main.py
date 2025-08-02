@@ -13,6 +13,10 @@ from pymongo import MongoClient
 import pandas as pd
 import datetime
 
+# Disable librosa caching to avoid permission issues in containers
+os.environ['LIBROSA_CACHE_DIR'] = '/tmp'
+os.environ['LIBROSA_USE_CACHE'] = '0'
+
 app = FastAPI()
 
 # Connect to MongoDB (adjust URI as needed)
@@ -30,9 +34,18 @@ def load_latest_model():
         )
         
         if latest_model:
-            # Load model from bytes
-            model_buffer = io.BytesIO(latest_model["model_data"])
-            model = load_model(model_buffer)
+            # Load model from bytes using temporary file
+            with tempfile.NamedTemporaryFile(suffix='.h5', delete=False) as temp_file:
+                temp_model_path = temp_file.name
+                temp_file.write(latest_model["model_data"])
+            
+            try:
+                model = load_model(temp_model_path)
+            finally:
+                try:
+                    os.remove(temp_model_path)
+                except:
+                    pass
             
             # Load encoders from bytes
             le = pickle.loads(latest_model["label_encoder"])
@@ -107,7 +120,34 @@ def extract_features(file_path, n_mfcc=13, n_chroma=12, n_mel=128):
         return np.concatenate([np.array(f).flatten() for f in features])
     except Exception as e:
         print(f"Error extracting features from {file_path}: {e}")
-        return None
+        # Try with minimal features if full extraction fails
+        try:
+            y, sr = librosa.load(file_path, sr=22050)
+            y, _ = librosa.effects.trim(y)
+            if len(y) == 0:
+                return None
+            y = y / (np.max(np.abs(y)) + 1e-6)
+            
+            # Extract only basic features
+            mfcc = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13)
+            mfcc_features = np.concatenate([
+                np.mean(mfcc, axis=1), np.std(mfcc, axis=1)
+            ])
+            
+            spectral_centroids = librosa.feature.spectral_centroid(y=y, sr=sr)
+            zero_crossing_rate = librosa.feature.zero_crossing_rate(y)
+            
+            basic_features = np.concatenate([
+                mfcc_features,
+                [np.mean(spectral_centroids), np.std(spectral_centroids)],
+                [np.mean(zero_crossing_rate), np.std(zero_crossing_rate)]
+            ])
+            
+            print(f"Using fallback feature extraction for {file_path}")
+            return basic_features
+        except Exception as fallback_error:
+            print(f"Fallback feature extraction also failed for {file_path}: {fallback_error}")
+            return None
 
 # ---------- Predict Endpoint ----------
 @app.post("/predict")
