@@ -233,8 +233,20 @@ async def predict(file: UploadFile = File(...)):
     probs = model.predict(scaled)
     pred_index = np.argmax(probs, axis=1)[0]
     pred_label = le.inverse_transform([pred_index])[0]
+    
+    # Debug information
+    print(f"Feature vector shape: {features.shape}")
+    print(f"Scaled features shape: {scaled.shape}")
+    print(f"Prediction probabilities: {probs[0]}")
+    print(f"Predicted index: {pred_index}")
+    print(f"Predicted label: {pred_label}")
+    print(f"All class probabilities: {dict(zip(le.classes_, probs[0]))}")
 
-    return {"prediction": pred_label}
+    return {
+        "prediction": pred_label,
+        "confidence": float(probs[0][pred_index]),
+        "all_probabilities": dict(zip(le.classes_, probs[0].tolist()))
+    }
 
 # ---------- Retrain Endpoint (Upload ZIP + Retrain) ----------
 @app.post("/retrain")
@@ -492,3 +504,30 @@ async def get_storage_info():
         }
     except Exception as e:
         return {"error": f"Failed to get storage info: {str(e)}"}
+
+@app.get("/test-model")
+async def test_model():
+    """Test the model with dummy features to check if it's working"""
+    try:
+        if model is None or le is None or scaler is None:
+            return {"error": "Model not loaded properly"}
+        
+        # Create dummy features (all zeros)
+        dummy_features = np.zeros(340)
+        
+        # Test prediction
+        scaled = scaler.transform([dummy_features])
+        probs = model.predict(scaled)
+        pred_index = np.argmax(probs, axis=1)[0]
+        pred_label = le.inverse_transform([pred_index])[0]
+        
+        return {
+            "model_loaded": True,
+            "classes": le.classes_.tolist(),
+            "dummy_prediction": pred_label,
+            "dummy_probabilities": dict(zip(le.classes_, probs[0].tolist())),
+            "feature_vector_size": len(dummy_features),
+            "scaler_fitted": hasattr(scaler, 'mean_')
+        }
+    except Exception as e:
+        return {"error": f"Model test failed: {str(e)}"}
