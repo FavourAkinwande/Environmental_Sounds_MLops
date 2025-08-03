@@ -157,7 +157,7 @@ Detailed test results:
 | Metric           | Value     |
 |------------------|-----------|
 | Predicted Class  | Engine      |
-| Confidence Score | %     |
+| Confidence Score | % 53.1    |
 
 ---
 
