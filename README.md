@@ -70,9 +70,7 @@ The selected sound classes were chosen based on their relevance to natural and h
 
 **Demo Video:** [Click here to access dataset](<https://www.kaggle.com/datasets/mmoreaux/environmental-sound-classification-50?select=audio>)  
 
-**Live Application:** [Click here to access UI ](<http://127.0.0.1:5501/templates/index.html>)  
-
-**Live Api Endpoint:** [Click here to access API endpoint ](<http://127.0.0.1:5501/templates/index.html>)
+**Live Api Endpoint:** [Click here to access API endpoint ](<https://lollypopping-environmental-sounds.hf.space>)
 
 
 ---
