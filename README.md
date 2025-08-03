@@ -72,7 +72,7 @@ The selected sound classes were chosen based on their relevance to natural and h
 
 **Live Application:** [Click here to access UI ](<http://127.0.0.1:5501/templates/index.html>)  
 
-**Live Api Endpoint:**
+**Live Api Endpoint:** [Click here to access API endpoint ](<http://127.0.0.1:5501/templates/index.html>)
 
 
 ---
@@ -158,14 +158,8 @@ Detailed test results:
 ### **Prediction Example**
 | Metric           | Value     |
 |------------------|-----------|
-| Predicted Class  | siren     |
-| Confidence Score | 91.2%     |
-
-### **Retraining Example**
-| Metric   | Value   |
-|----------|---------|
-| Loss     | 0.34    |
-| Accuracy | 89.7%   |
+| Predicted Class  | Engine      |
+| Confidence Score | %     |
 
 ---
 
