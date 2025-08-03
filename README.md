@@ -10,7 +10,7 @@ This project is an AI-powered web application designed to detect and classify en
    Users can upload `.wav` audio files, and the system will predict the sound class (e.g., rain, siren, engine) using a pre-trained deep neural network.
 
 2. **Model Retraining**  
-   A ZIP file containing new labeled audio data and metadata can be uploaded to retrain the model. The model is updated, versioned, and saved automatically.
+   A ZIP file containing audio data and metadata can be uploaded to retrain the model. The model is updated, versioned, and saved automatically.
 
 3. **Data Visualizations**  
    The app includes visual plots such as waveform, spectrogram, and class distribution to help understand the acoustic characteristics of the dataset.
@@ -68,11 +68,9 @@ The selected sound classes were chosen based on their relevance to natural and h
 
 ---
 
-**Demo Video:** [Click here to access dataset](<https://www.kaggle.com/datasets/mmoreaux/environmental-sound-classification-50?select=audio>)  
+**Demo Video:** [Click here to access video](<https://www.youtube.com/watch?v=CbeVpwsbexg>)  
 
-**Live Application:** [Click here to access UI ](<http://127.0.0.1:5501/templates/index.html>)  
-
-**Live Api Endpoint:** [Click here to access API endpoint ](<http://127.0.0.1:5501/templates/index.html>)
+**Live Api Endpoint:** [Click here to access API endpoint ](<https://lollypopping-environmental-sounds.hf.space>)
 
 
 ---
@@ -147,7 +145,7 @@ The system’s performance was evaluated under heavy user load using **Locust**,
 
 Detailed test results:
 
-- **CSV Report:** [Locust Simulation Results](/Locust_requests.csv)
+- **CSV Report:** [Locust Simulation Results](/locust.csv)
 - **Visualization:**  
   ![Flood Simulation Chart](/total_requests_per_second.png)
 
@@ -159,7 +157,7 @@ Detailed test results:
 | Metric           | Value     |
 |------------------|-----------|
 | Predicted Class  | Engine      |
-| Confidence Score | %     |
+| Confidence Score | % 53.1    |
 
 ---
 
