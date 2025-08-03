@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Environmental Sounds - Home</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body {
+            background: #f6fff7;
+        }
+        .landing-container {
+            max-width: 500px;
+            margin: 60px auto;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(34,139,34,0.10);
+            padding: 2.5em 2em 2em 2em;
+            text-align: center;
+        }
+        .landing-title {
+            color: #228B22;
+            font-size: 2.2em;
+            margin-bottom: 0.3em;
+        }
+        .landing-desc {
+            color: #444;
+            font-size: 1.1em;
+            margin-bottom: 2em;
+        }
+        .landing-btn {
+            display: inline-block;
+            background: #228B22;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 1em 2.2em;
+            font-size: 1.1em;
+            margin: 0.5em 1em;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s, box-shadow 0.2s;
+            box-shadow: 0 2px 8px rgba(34,139,34,0.08);
+        }
+        .landing-btn:hover {
+            background: #176d16;
+        }
+        .leaf {
+            font-size: 2.5em;
+            color: #228B22;
+            margin-bottom: 0.2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="landing-container">
+        <div class="leaf">&#127810;</div>
+        <div class="landing-title">Environmental Sounds AI</div>
+        <div class="landing-desc">
+            Welcome! This tool lets you predict environmental sounds from audio and retrain the model with your own data.<br>
+            Choose an action below to get started.
+        </div>
+        <a href="/predict.html" class="landing-btn">Predict Sound</a>
+        <a href="/retrain.html" class="landing-btn">Retrain Model</a>
+    </div>
+</body>
+</html>

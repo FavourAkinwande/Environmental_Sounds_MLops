@@ -14,6 +14,9 @@ import joblib
 from pymongo import MongoClient
 import pandas as pd
 import datetime
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from fastapi.requests import Request
 
 # Disable librosa caching to avoid permission issues in containers
 os.environ['LIBROSA_CACHE_DIR'] = '/tmp'
@@ -37,6 +40,9 @@ mongo_client = MongoClient("mongodb+srv://fakinwande:M50xQRyrwpnBGG9j@cluster0.f
 db = mongo_client["environmental_sounds"]
 retrain_collection = db["retrain_data"]
 models_collection = db["models"]
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
 
 # Function to clean up old data to manage storage
 def cleanup_old_data():
@@ -345,8 +351,16 @@ async def retrain_model(zipfile_data: UploadFile = File(...)):
     }
 
 @app.get("/")
-async def root():
-    return {"message": "Environmental Sounds API is running."}
+async def serve_index(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
+
+@app.get("/predict.html")
+async def serve_predict(request: Request):
+    return templates.TemplateResponse("predict.html", {"request": request})
+
+@app.get("/retrain.html")
+async def serve_retrain(request: Request):
+    return templates.TemplateResponse("retrain.html", {"request": request})
 
 @app.post("/cleanup")
 async def cleanup_database():
