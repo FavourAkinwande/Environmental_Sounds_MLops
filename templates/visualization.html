@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Visualization - Environmental Sound Detection</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav class="main-nav">
+        <div class="nav-logo">
+            <svg class="logo-icon" width="40" height="40" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="28" y="16" width="8" height="32" rx="4" />
+                <rect x="16" y="24" width="8" height="16" rx="4" opacity="0.7" />
+                <rect x="40" y="24" width="8" height="16" rx="4" opacity="0.7" />
+            </svg>
+            <span class="brand">EnviroSound</span>
+        </div>
+        <div class="nav-links">
+            <a href="./predict.html">Predict</a>
+            <a href="./retrain.html">Retrain</a>
+            <a href="./visualization.html" style="background: #e6f4ea; color: #256029;">Visualize</a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <a href="/" class="back-home">← Back to Home</a>
+        
+        <div class="page-header">
+            <h1>Data Visualization & Insights</h1>
+            <p>Explore environmental sound detection patterns, model performance metrics, and audio analysis visualizations to better understand your acoustic environment.</p>
+        </div>
+        
+        <div class="visualization-grid">
+            <!-- Visualization Item 1 -->
+            <div class="visualization-item">
+                <div class="image-container">
+                    <img src="./image1.jpg" alt="Audio Samples Distribution" />
+                </div>
+                <div class="insight-content">
+                    <div class="insight-title">Audio Samples Distribution</div>
+                    <div class="insight-description">
+                        The visualization above is a bar chart that shows a perfectly even spread of audio samples across all 16 environmental sound classes, with each one having exactly 40 recordings.
+                    </div>
+                    <div class="insight-interpretation">
+                        <h4>Interpretation</h4>
+                        <p>This tells us that the dataset is not only well-organized, but also intentionally balanced — which is a big win for training a fair and accurate model. Overall, this is an even distribution that reflects a well-prepared dataset, setting a solid foundation for building a fair and effective environmental sound classifier.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Visualization Item 2 -->
+            <div class="visualization-item">
+                <div class="image-container">
+                    <img src="./image2.jpg" alt="WaveForm of Rain" />
+                </div>
+                <div class="insight-content">
+                    <div class="insight-title">WaveForm of Rain</div>
+                    <div class="insight-description">
+                        The visualization above is a waveform plot that shows the amplitude of the sample 'rain' sound over time. The waveform maintains a relatively steady pattern throughout the entire 5-second duration, with soft fluctuations and no sharp spikes.
+                    </div>
+                    <div class="insight-interpretation">
+                        <h4>Interpretation</h4>
+                        <p>This tells us that the sound of rain is continuous and low-intensity, which is typical of a natural ambient sound. Unlike abrupt noises like sirens or glass breaking. Overall, this visualization highlights the predictable and consistent nature of the rain sound, making it easier for the model to learn its characteristics.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Visualization Item 3 -->
+            <div class="visualization-item">
+                <div class="image-container">
+                    <img src="./image3.jpg" alt="Mel Spectrogram of Rain" />
+                </div>
+                <div class="insight-content">
+                    <div class="insight-title">Mel Spectrogram of Rain</div>
+                    <div class="insight-description">
+                        The visualization above is a Mel spectrogram that shows how the frequency content of the 'rain' sound evolves over time. The plot displays time on the x-axis, frequency on the y-axis, and intensity in color — with brighter areas representing stronger energy at specific frequencies.
+                    </div>
+                    <div class="insight-interpretation">
+                        <h4>Interpretation</h4>
+                        <p>This tells us that the sound of rain is spread broadly across low to mid frequencies, with no sharp spikes or concentrated energy bursts. The consistent warm colors across the spectrum reflect the steady, diffuse nature of rainfall — a soft, continuous sound with texture but no sudden changes.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Visualization Item 4 -->
+            <div class="visualization-item">
+                <div class="image-container">
+                    <img src="./image4.jpg" alt="Audio Duration Distribution" />
+                </div>
+                <div class="insight-content">
+                    <div class="insight-title">Audio Duration Distribution</div>
+                    <div class="insight-description">
+                        The visualization above is a histogram showing the distribution of audio durations in the dataset. As seen in the chart, all audio clips are tightly clustered around 5.0 seconds, with no variation in length.
+                    </div>
+                    <div class="insight-interpretation">
+                        <h4>Interpretation</h4>
+                        <p>This tells us that the dataset is uniformly structured, which is ideal for feature extraction and model training. Having all clips at the same duration ensures consistent input shapes and simplifies preprocessing — reducing the risk of padding, truncation errors, or training inconsistencies.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

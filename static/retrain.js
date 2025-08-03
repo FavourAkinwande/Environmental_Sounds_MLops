@@ -7,7 +7,7 @@ document.getElementById('retrain-form').addEventListener('submit', async functio
     
     // Check if file is selected
     if (!fileInput.files.length) {
-        resultDiv.innerHTML = '<div class="error-message">⚠ Please select a ZIP file to upload.</div>';
+        resultDiv.innerHTML = '<div class="error-message">⚠️ Please select a ZIP file to upload.</div>';
         return;
     }
     
@@ -15,7 +15,7 @@ document.getElementById('retrain-form').addEventListener('submit', async functio
     
     // Validate file type
     if (!file.name.toLowerCase().endsWith('.zip')) {
-        resultDiv.innerHTML = '<div class="error-message">⚠ Please upload a ZIP file only.</div>';
+        resultDiv.innerHTML = '<div class="error-message">⚠️ Please upload a ZIP file only.</div>';
         return;
     }
     
@@ -46,7 +46,7 @@ document.getElementById('retrain-form').addEventListener('submit', async functio
             `;
         } else {
             // API error
-            resultDiv.innerHTML = <div class="error-message">❌ ${data.error || 'Retraining failed. Please try again.'}</div>;
+            resultDiv.innerHTML = `<div class="error-message">❌ ${data.error || 'Retraining failed. Please try again.'}</div>`;
         }
     } catch (err) {
         // Network or connection error
@@ -71,7 +71,7 @@ function updateFileName() {
     
     if (file) {
         // Show file name
-        uploadText.textContent = 📦 ${file.name};
+        uploadText.textContent = `📦 ${file.name}`;
         uploadDesc.textContent = 'Dataset selected! Click "Start Training" to begin retraining.';
         
         // Add visual feedback

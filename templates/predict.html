@@ -7,17 +7,96 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+    <nav class="main-nav">
+        <div class="nav-logo">
+            <svg class="logo-icon" width="40" height="40" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="28" y="16" width="8" height="32" rx="4" />
+                <rect x="16" y="24" width="8" height="16" rx="4" opacity="0.7" />
+                <rect x="40" y="24" width="8" height="16" rx="4" opacity="0.7" />
+            </svg>
+            <span class="brand">EnviroSound</span>
+        </div>
+        <div class="nav-links">
+            <a href="./predict.html" style="background: #e6f4ea; color: #256029;">Predict</a>
+            <a href="./retrain.html">Retrain</a>
+            <a href="./visualization.html">Visualize</a>
+        </div>
+    </nav>
+    
     <div class="container">
-        <a href="./index.html" class="back-home">&#8592; Back to Home</a>
-        <h1>Environmental Sound Prediction</h1>
-        <form id="predict-form">
-            <label for="audio-file">Upload WAV file:</label>
-            <input type="file" id="audio-file" name="file" accept="audio/wav" required>
-            <button type="submit">Predict</button>
-        </form>
+        <a href="./index.html" class="back-home">← Back to Home</a>
+        
+        <div class="page-header">
+            <h1>Environmental Sound Prediction</h1>
+            <p>Upload an audio file to instantly detect and classify environmental sounds using our advanced AI model.</p>
+        </div>
+        
+        <div class="prediction-section">
+            <div class="prediction-info">
+                <h2>🎯 How It Works</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <h3>📁 Upload Audio</h3>
+                        <p>Upload a WAV file containing environmental sounds. The model supports various sound types including traffic, nature, human activity, and more.</p>
+                    </div>
+                    <div class="info-item">
+                        <h3>⚡ Instant Analysis</h3>
+                        <p>Our AI model quickly analyzes the audio features and extracts patterns to identify the type of environmental sound present.</p>
+                    </div>
+                    <div class="info-item">
+                        <h3>📊 Get Results</h3>
+                        <p>Receive detailed predictions with confidence scores showing the likelihood of each sound category being present in your audio.</p>
+                    </div>
+                    <div class="info-item">
+                        <h3>🎵 Audio Requirements</h3>
+                        <p>Supported format: WAV files. Recommended duration: 3-10 seconds. Clear, high-quality recordings provide the best results.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="upload-area">
+                <div class="upload-icon">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 18V5l12-2v13" stroke="#388e3c" stroke-width="2" fill="none"/>
+                        <path d="M6 8l6 2 6-2" stroke="#388e3c" stroke-width="2" fill="none"/>
+                        <path d="M6 12l6 2 6-2" stroke="#388e3c" stroke-width="2" fill="none"/>
+                        <path d="M6 16l6 2 6-2" stroke="#388e3c" stroke-width="2" fill="none"/>
+                    </svg>
+                </div>
+                <h3>Click to Upload Audio</h3>
+                <p>Drag and drop your WAV file here or click to browse</p>
+                <form id="predict-form">
+                    <input type="file" id="audio-file" name="file" accept="audio/wav" required>
+                    <button type="submit" class="upload-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" fill="none"/>
+                            <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" stroke="currentColor" stroke-width="2" fill="none"/>
+                        </svg>
+                        Analyze Sound
+                    </button>
+                </form>
+            </div>
+        </div>
+        
         <div id="prediction-result"></div>
-        <a href="./retrain.html">Go to Retrain Model</a>
+        
+        <div class="action-links">
+            <a href="./retrain.html" class="action-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M9 18a9 9 0 0 1 15.6-6.36l-2.1 2.1A1 1 0 0 0 23.3 15.7l5.2-5.2a1 1 0 0 0 0-1.4l-5.2-5.2a1 1 0 0 0-1.4 1.4l2.1 2.1A11 11 0 1 0 29 18a1 1 0 1 0-2 0 9 9 0 1 1-18 0z" stroke="currentColor" stroke-width="2" fill="none"/>
+                </svg>
+                Improve Model
+            </a>
+            <a href="./visualization.html" class="action-link">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 3h18v18H3V3zm2 2v14h14V5H5z" stroke="currentColor" stroke-width="2" fill="none"/>
+                    <path d="M7 7h10v2H7V7zm0 4h10v2H7v-2zm0 4h6v2H7v-2z" stroke="currentColor" stroke-width="2" fill="none"/>
+                </svg>
+                View Insights
+            </a>
+        </div>
     </div>
+    
     <script src="/static/predict.js"></script>
 </body>
 </html>
