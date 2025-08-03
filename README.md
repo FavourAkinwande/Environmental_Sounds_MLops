@@ -68,7 +68,7 @@ The selected sound classes were chosen based on their relevance to natural and h
 
 ---
 
-**Demo Video:** [Click here to access dataset](<https://www.youtube.com/watch?v=CbeVpwsbexg>)  
+**Demo Video:** [Click here to access video](<https://www.youtube.com/watch?v=CbeVpwsbexg>)  
 
 **Live Api Endpoint:** [Click here to access API endpoint ](<https://lollypopping-environmental-sounds.hf.space>)
 
