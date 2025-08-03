@@ -29,7 +29,7 @@ Built with FastAPI, this backend service is integrated with MongoDB Atlas for da
 **Dataset Overview**
 
 - **Name**: ESC-50 Environmental Sound Subset  
-- **Source**: [ESC-50 Dataset](https://github.com/karolpiczak/ESC-50)  
+- **Source**: [Click here to access dataset](<https://www.kaggle.com/datasets/mmoreaux/environmental-sound-classification-50?select=audio>)    
 - **Description**:  
   The dataset i used is a curated subset of the original ESC-50 dataset, specifically filtered to include only **environmental sounds** that are relevant to real-world ambient and urban environments. The dataset comprises **16 distinct classes** with **40 audio samples per class**, each 5 seconds long.
   
@@ -68,11 +68,9 @@ The selected sound classes were chosen based on their relevance to natural and h
 
 ---
 
-**Demo Video:**
- 
-**Live Links:**
+**Demo Video:** [Click here to access dataset](<https://www.kaggle.com/datasets/mmoreaux/environmental-sound-classification-50?select=audio>)  
 
-**Live Application:**
+**Live Application:** [Click here to access UI ](<http://127.0.0.1:5501/templates/index.html>)  
 
 **Live Api Endpoint:**
 
