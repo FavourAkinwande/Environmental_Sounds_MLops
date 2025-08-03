@@ -10,7 +10,7 @@ This project is an AI-powered web application designed to detect and classify en
    Users can upload `.wav` audio files, and the system will predict the sound class (e.g., rain, siren, engine) using a pre-trained deep neural network.
 
 2. **Model Retraining**  
-   A ZIP file containing new labeled audio data and metadata can be uploaded to retrain the model. The model is updated, versioned, and saved automatically.
+   A ZIP file containing audio data and metadata can be uploaded to retrain the model. The model is updated, versioned, and saved automatically.
 
 3. **Data Visualizations**  
    The app includes visual plots such as waveform, spectrogram, and class distribution to help understand the acoustic characteristics of the dataset.
