@@ -5,27 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Retrain Environmental Sound Model</title>
     <link rel="stylesheet" href="/static/style.css">
-    <style>
-        body { background: #f6fff7; }
-        .container { border-radius: 12px; box-shadow: 0 4px 16px rgba(34,139,34,0.10); }
-        h1 { color: #228B22; }
-        .desc { color: #444; text-align: center; margin-bottom: 1.5em; }
-        .back-link { display: block; text-align: center; margin-top: 1.5em; color: #228B22; text-decoration: none; font-weight: bold; }
-        .back-link:hover { text-decoration: underline; }
-    </style>
 </head>
 <body>
     <div class="container">
-        <h1>Retrain Model</h1>
-        <div class="desc">Upload a ZIP file containing audio and a CSV to retrain the environmental sound model with your own data.</div>
+        <a href="./index.html" class="back-home">&#8592; Back to Home</a>
+        <h1>Retrain Environmental Sound Model</h1>
         <form id="retrain-form">
             <label for="zip-file">Upload ZIP file (audio + CSV):</label>
             <input type="file" id="zip-file" name="file" accept=".zip" required>
             <button type="submit">Retrain</button>
         </form>
         <div id="retrain-result"></div>
-        <a href="/predict.html">Go to Prediction</a>
-        <a href="/index.html" class="back-link">&#8592; Back to Home</a>
+        <a href="./predict.html">Go to Prediction</a>
     </div>
     <script src="/static/retrain.js"></script>
 </body>

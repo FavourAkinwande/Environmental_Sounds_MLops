@@ -14,9 +14,6 @@ import joblib
 from pymongo import MongoClient
 import pandas as pd
 import datetime
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-from fastapi.requests import Request
 
 # Disable librosa caching to avoid permission issues in containers
 os.environ['LIBROSA_CACHE_DIR'] = '/tmp'
@@ -40,9 +37,6 @@ mongo_client = MongoClient("mongodb+srv://fakinwande:M50xQRyrwpnBGG9j@cluster0.f
 db = mongo_client["environmental_sounds"]
 retrain_collection = db["retrain_data"]
 models_collection = db["models"]
-
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="templates")
 
 # Function to clean up old data to manage storage
 def cleanup_old_data():
@@ -224,16 +218,15 @@ async def retrain_model(zipfile_data: UploadFile = File(...)):
         csv_files = [f for f in zip_ref.namelist() if f.endswith('.csv')]
         if not csv_files:
             return {"error": "No CSV file found in the uploaded data."}
+
         csv_content = zip_ref.read(csv_files[0])
         df = pd.read_csv(io.BytesIO(csv_content))
+
         possible_label_columns = ['label', 'category', 'class', 'target']
-        label_column = None
-        for col in possible_label_columns:
-            if col in df.columns:
-                label_column = col
-                break
-        if label_column is None:
+        label_column = next((col for col in possible_label_columns if col in df.columns), None)
+        if not label_column:
             return {"error": f"No label column found. Available columns: {list(df.columns)}"}
+
         features, labels = [], []
         for _, row in df.iterrows():
             file = row['filename']
@@ -246,10 +239,7 @@ async def retrain_model(zipfile_data: UploadFile = File(...)):
                 try:
                     fvec = extract_features(temp_audio_path)
                 finally:
-                    try:
-                        os.remove(temp_audio_path)
-                    except:
-                        pass
+                    os.remove(temp_audio_path)
                 if fvec is not None:
                     features.append(fvec)
                     labels.append(label)
@@ -261,8 +251,11 @@ async def retrain_model(zipfile_data: UploadFile = File(...)):
                         "upload_timestamp": datetime.datetime.now(),
                         "metadata": row.to_dict()
                     })
+
     if len(features) < 2:
         return {"error": "Not enough valid data to retrain."}
+
+    # Preprocess
     X = np.array(features)
     y = np.array(labels)
     le_new = LabelEncoder()
@@ -271,65 +264,49 @@ async def retrain_model(zipfile_data: UploadFile = File(...)):
     scaler_new = StandardScaler()
     X_scaled = scaler_new.fit_transform(X)
     X_train, X_val, y_train, y_val = train_test_split(X_scaled, y_cat, test_size=0.2, stratify=y_encoded)
-    print("Applying data augmentation...")
-    X_train_augmented = []
-    y_train_augmented = []
-    for i in range(len(X_train)):
-        X_train_augmented.append(X_train[i])
-        y_train_augmented.append(y_train[i])
-        noise = np.random.normal(0, 0.01, X_train[i].shape)
-        X_train_augmented.append(X_train[i] + noise)
-        y_train_augmented.append(y_train[i])
-        noise2 = np.random.normal(0, 0.02, X_train[i].shape)
-        X_train_augmented.append(X_train[i] + noise2)
-        y_train_augmented.append(y_train[i])
-    X_train = np.array(X_train_augmented)
-    y_train = np.array(y_train_augmented)
-    print(f"Training data augmented from {len(X_scaled)} to {len(X_train)} samples")
+
+    # Load base model
     base_model = load_model("audio_classifier_model.h5")
     model_new = Sequential()
     for layer in base_model.layers[:-1]:
         model_new.add(layer)
     model_new.add(Dense(len(le_new.classes_), activation='softmax'))
+
+    # Make all layers trainable
     for layer in model_new.layers:
-        layer.trainable = False
-    model_new.layers[-1].trainable = True
-    optimizer1 = Adam(learning_rate=0.01)
-    model_new.compile(optimizer=optimizer1, loss='categorical_crossentropy', metrics=['accuracy'])
-    print("Training output layer...")
-    history1 = model_new.fit(
-        X_train, y_train, 
-        validation_data=(X_val, y_val), 
-        epochs=20, 
-        batch_size=16,
-        verbose=1
-    )
-    for layer in model_new.layers[-4:]:
         layer.trainable = True
-    optimizer2 = Adam(learning_rate=0.0001)
-    model_new.compile(optimizer=optimizer2, loss='categorical_crossentropy', metrics=['accuracy'])
-    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=3, min_lr=1e-8, verbose=1)
+
+    model_new.compile(
+        optimizer=Adam(learning_rate=0.001),
+        loss='categorical_crossentropy',
+        metrics=['accuracy']
+    )
+
+    # Callbacks
+    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=3, min_lr=1e-6, verbose=1)
     early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True, verbose=1)
+
+    # Train once
+    print("Training model...")
     history = model_new.fit(
-        X_train, y_train, 
-        validation_data=(X_val, y_val), 
-        epochs=100, 
+        X_train, y_train,
+        validation_data=(X_val, y_val),
+        epochs=50,
         batch_size=16,
         callbacks=[reduce_lr, early_stopping],
         verbose=1
     )
-    train_acc = history.history['accuracy'][-1]
-    val_acc = history.history['val_accuracy'][-1]
+
+    # Evaluate & Save
     overall_loss, overall_accuracy = model_new.evaluate(X_scaled, y_cat, verbose=0)
     with tempfile.NamedTemporaryFile(suffix='.h5', delete=False) as temp_file:
         temp_model_path = temp_file.name
     model_new.save(temp_model_path)
     with open(temp_model_path, 'rb') as f:
         model_bytes = f.read()
-    try:
-        os.remove(temp_model_path)
-    except:
-        pass
+    os.remove(temp_model_path)
+
+    # Save model version
     le_bytes = pickle.dumps(le_new)
     scaler_bytes = pickle.dumps(scaler_new)
     model_doc = {
@@ -342,8 +319,10 @@ async def retrain_model(zipfile_data: UploadFile = File(...)):
         "classes": le_new.classes_.tolist(),
         "version": timestamp
     }
+
     cleanup_old_data()
     models_collection.insert_one(model_doc)
+
     return {
         "message": "Model retrained and updated successfully.",
         "overall_accuracy": float(overall_accuracy),
@@ -351,16 +330,8 @@ async def retrain_model(zipfile_data: UploadFile = File(...)):
     }
 
 @app.get("/")
-async def serve_index(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
-
-@app.get("/predict.html")
-async def serve_predict(request: Request):
-    return templates.TemplateResponse("predict.html", {"request": request})
-
-@app.get("/retrain.html")
-async def serve_retrain(request: Request):
-    return templates.TemplateResponse("retrain.html", {"request": request})
+async def root():
+    return {"message": "Environmental Sounds API is running."}
 
 @app.post("/cleanup")
 async def cleanup_database():

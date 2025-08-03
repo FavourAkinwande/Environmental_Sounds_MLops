@@ -3,65 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Environmental Sounds - Home</title>
+    <title>Environmental Sound Detection</title>
     <link rel="stylesheet" href="/static/style.css">
-    <style>
-        body {
-            background: #f6fff7;
-        }
-        .landing-container {
-            max-width: 500px;
-            margin: 60px auto;
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 4px 16px rgba(34,139,34,0.10);
-            padding: 2.5em 2em 2em 2em;
-            text-align: center;
-        }
-        .landing-title {
-            color: #228B22;
-            font-size: 2.2em;
-            margin-bottom: 0.3em;
-        }
-        .landing-desc {
-            color: #444;
-            font-size: 1.1em;
-            margin-bottom: 2em;
-        }
-        .landing-btn {
-            display: inline-block;
-            background: #228B22;
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            padding: 1em 2.2em;
-            font-size: 1.1em;
-            margin: 0.5em 1em;
-            cursor: pointer;
-            text-decoration: none;
-            transition: background 0.2s, box-shadow 0.2s;
-            box-shadow: 0 2px 8px rgba(34,139,34,0.08);
-        }
-        .landing-btn:hover {
-            background: #176d16;
-        }
-        .leaf {
-            font-size: 2.5em;
-            color: #228B22;
-            margin-bottom: 0.2em;
-        }
-    </style>
 </head>
 <body>
-    <div class="landing-container">
-        <div class="leaf">&#127810;</div>
-        <div class="landing-title">Environmental Sounds AI</div>
-        <div class="landing-desc">
-            Welcome! This tool lets you predict environmental sounds from audio and retrain the model with your own data.<br>
-            Choose an action below to get started.
+    <nav class="main-nav">
+        <div class="nav-logo">
+            <svg class="logo-icon" width="40" height="40" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="28" y="16" width="8" height="32" rx="4" />
+                <rect x="16" y="24" width="8" height="16" rx="4" opacity="0.7" />
+                <rect x="40" y="24" width="8" height="16" rx="4" opacity="0.7" />
+            </svg>
+            <span class="brand">EnviroSound</span>
         </div>
-        <a href="/predict.html" class="landing-btn">Predict Sound</a>
-        <a href="/retrain.html" class="landing-btn">Retrain Model</a>
+        <div class="nav-links">
+            <a href="/predict.html">Predict</a>
+            <a href="/retrain.html">Retrain</a>
+            <a href="#">Visualize</a>
+        </div>
+    </nav>
+    <div class="hero fade-in">
+        <div class="hero-bg"></div>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <div class="logo-container">
+                <svg class="logo-icon" width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="28" y="16" width="8" height="32" rx="4" />
+                    <rect x="16" y="24" width="8" height="16" rx="4" opacity="0.7" />
+                    <rect x="40" y="24" width="8" height="16" rx="4" opacity="0.7" />
+                </svg>
+            </div>
+            <h1>Detect Environmental Sounds</h1>
+            <p>AI-powered environmental sound detection for smarter, safer, and more interactive environments.</p>
+        </div>
+    </div>
+    <div class="container">
+        <section class="features features-row">
+            <div class="feature card-animate">
+                <div class="feature-icon">
+                    <!-- Sound wave icon -->
+                    <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="15" y="6" width="6" height="24" rx="3" fill="#388e3c"/>
+                        <rect x="6" y="13" width="6" height="10" rx="3" fill="#388e3c" opacity="0.7"/>
+                        <rect x="24" y="13" width="6" height="10" rx="3" fill="#388e3c" opacity="0.7"/>
+                    </svg>
+                </div>
+                <h2>Prediction of Environmental Sound</h2>
+                <p>Upload an audio file and instantly detect the type of environmental sound using our advanced AI model.</p>
+            </div>
+            <div class="feature card-animate">
+                <div class="feature-icon">
+                    <!-- Refresh/loop icon -->
+                    <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 18a9 9 0 0 1 15.6-6.36l-2.1 2.1A1 1 0 0 0 23.3 15.7l5.2-5.2a1 1 0 0 0 0-1.4l-5.2-5.2a1 1 0 0 0-1.4 1.4l2.1 2.1A11 11 0 1 0 29 18a1 1 0 1 0-2 0 9 9 0 1 1-18 0z" fill="#388e3c"/>
+                    </svg>
+                </div>
+                <h2>Retrain Model</h2>
+                <p>Improve accuracy by retraining the model with your own labeled audio data. Make the system smarter for your unique environment.</p>
+            </div>
+            <div class="feature card-animate">
+                <div class="feature-icon">
+                    <!-- Bar chart icon -->
+                    <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="6" y="20" width="4" height="10" rx="2" fill="#388e3c"/>
+                        <rect x="16" y="12" width="4" height="18" rx="2" fill="#388e3c"/>
+                        <rect x="26" y="6" width="4" height="24" rx="2" fill="#388e3c"/>
+                    </svg>
+                </div>
+                <h2>Data Visualizations</h2>
+                <p>Visualize sound data and model performance (coming soon) to better understand and interpret environmental audio.</p>
+            </div>
+        </section>
     </div>
 </body>
 </html>

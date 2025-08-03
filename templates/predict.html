@@ -5,27 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Environmental Sound Prediction</title>
     <link rel="stylesheet" href="/static/style.css">
-    <style>
-        body { background: #f6fff7; }
-        .container { border-radius: 12px; box-shadow: 0 4px 16px rgba(34,139,34,0.10); }
-        h1 { color: #228B22; }
-        .desc { color: #444; text-align: center; margin-bottom: 1.5em; }
-        .back-link { display: block; text-align: center; margin-top: 1.5em; color: #228B22; text-decoration: none; font-weight: bold; }
-        .back-link:hover { text-decoration: underline; }
-    </style>
 </head>
 <body>
     <div class="container">
-        <h1>Predict Environmental Sound</h1>
-        <div class="desc">Upload a WAV file to identify the environmental sound. Powered by AI.</div>
+        <a href="./index.html" class="back-home">&#8592; Back to Home</a>
+        <h1>Environmental Sound Prediction</h1>
         <form id="predict-form">
             <label for="audio-file">Upload WAV file:</label>
             <input type="file" id="audio-file" name="file" accept="audio/wav" required>
             <button type="submit">Predict</button>
         </form>
         <div id="prediction-result"></div>
-        <a href="/retrain.html">Go to Retrain Model</a>
-        <a href="/index.html" class="back-link">&#8592; Back to Home</a>
+        <a href="./retrain.html">Go to Retrain Model</a>
     </div>
     <script src="/static/predict.js"></script>
 </body>
