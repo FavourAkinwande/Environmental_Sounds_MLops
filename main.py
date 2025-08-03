@@ -159,7 +159,7 @@ def extract_features(file_path, n_mfcc=13, n_chroma=12, n_mel=128):
             freqs = np.fft.fftfreq(len(y), 1/sr)
             fft_vals = np.abs(np.fft.fft(y))
             spectral_centroid = np.sum(freqs * fft_vals) / np.sum(fft_vals)
-            spectral_centroid_std = np.std(spectral_centroid) if hasattr(spectral_centroid, '__iter__') else 0
+            spectral_centroid_std = np.std(spectral_centroid) if hasattr(spectral_centroid, 'iter') else 0
             zero_crossings = np.sum(np.diff(np.signbit(y)))
             zero_crossing_rate = zero_crossings / len(y)
             features.extend([spectral_centroid, spectral_centroid_std, zero_crossing_rate, 0])
@@ -213,136 +213,242 @@ async def predict(file: UploadFile = File(...)):
 # ---------- Retrain Endpoint (Upload ZIP + Retrain) ----------
 @app.post("/retrain")
 async def retrain_model(zipfile_data: UploadFile = File(...)):
-    zip_content = await zipfile_data.read()
-    with zipfile.ZipFile(io.BytesIO(zip_content), 'r') as zip_ref:
-        csv_files = [f for f in zip_ref.namelist() if f.endswith('.csv')]
-        if not csv_files:
-            return {"error": "No CSV file found in the uploaded data."}
-        csv_content = zip_ref.read(csv_files[0])
-        df = pd.read_csv(io.BytesIO(csv_content))
-        possible_label_columns = ['label', 'category', 'class', 'target']
-        label_column = None
-        for col in possible_label_columns:
-            if col in df.columns:
-                label_column = col
-                break
-        if label_column is None:
-            return {"error": f"No label column found. Available columns: {list(df.columns)}"}
-        features, labels = [], []
-        for _, row in df.iterrows():
-            file = row['filename']
-            label = row[label_column]
-            if file in zip_ref.namelist() and file.endswith(".wav"):
-                audio_content = zip_ref.read(file)
-                with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
-                    temp_audio_path = temp_file.name
-                    temp_file.write(audio_content)
-                try:
-                    fvec = extract_features(temp_audio_path)
-                finally:
-                    try:
-                        os.remove(temp_audio_path)
-                    except:
-                        pass
-                if fvec is not None:
-                    features.append(fvec)
-                    labels.append(label)
-                    retrain_collection.insert_one({
-                        "filename": file,
-                        "label": label,
-                        "features": fvec.tolist(),
-                        "audio_data": audio_content,
-                        "upload_timestamp": datetime.datetime.now(),
-                        "metadata": row.to_dict()
-                    })
-    if len(features) < 2:
-        return {"error": "Not enough valid data to retrain."}
-    X = np.array(features)
-    y = np.array(labels)
-    le_new = LabelEncoder()
-    y_encoded = le_new.fit_transform(y)
-    y_cat = to_categorical(y_encoded)
-    scaler_new = StandardScaler()
-    X_scaled = scaler_new.fit_transform(X)
-    X_train, X_val, y_train, y_val = train_test_split(X_scaled, y_cat, test_size=0.2, stratify=y_encoded)
-    print("Applying data augmentation...")
-    X_train_augmented = []
-    y_train_augmented = []
-    for i in range(len(X_train)):
-        X_train_augmented.append(X_train[i])
-        y_train_augmented.append(y_train[i])
-        noise = np.random.normal(0, 0.01, X_train[i].shape)
-        X_train_augmented.append(X_train[i] + noise)
-        y_train_augmented.append(y_train[i])
-        noise2 = np.random.normal(0, 0.02, X_train[i].shape)
-        X_train_augmented.append(X_train[i] + noise2)
-        y_train_augmented.append(y_train[i])
-    X_train = np.array(X_train_augmented)
-    y_train = np.array(y_train_augmented)
-    print(f"Training data augmented from {len(X_scaled)} to {len(X_train)} samples")
-    base_model = load_model("audio_classifier_model.h5")
-    model_new = Sequential()
-    for layer in base_model.layers[:-1]:
-        model_new.add(layer)
-    model_new.add(Dense(len(le_new.classes_), activation='softmax'))
-    for layer in model_new.layers:
-        layer.trainable = False
-    model_new.layers[-1].trainable = True
-    optimizer1 = Adam(learning_rate=0.01)
-    model_new.compile(optimizer=optimizer1, loss='categorical_crossentropy', metrics=['accuracy'])
-    print("Training output layer...")
-    history1 = model_new.fit(
-        X_train, y_train, 
-        validation_data=(X_val, y_val), 
-        epochs=20, 
-        batch_size=16,
-        verbose=1
-    )
-    for layer in model_new.layers[-4:]:
-        layer.trainable = True
-    optimizer2 = Adam(learning_rate=0.0001)
-    model_new.compile(optimizer=optimizer2, loss='categorical_crossentropy', metrics=['accuracy'])
-    reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=3, min_lr=1e-8, verbose=1)
-    early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True, verbose=1)
-    history = model_new.fit(
-        X_train, y_train, 
-        validation_data=(X_val, y_val), 
-        epochs=100, 
-        batch_size=16,
-        callbacks=[reduce_lr, early_stopping],
-        verbose=1
-    )
-    train_acc = history.history['accuracy'][-1]
-    val_acc = history.history['val_accuracy'][-1]
-    overall_loss, overall_accuracy = model_new.evaluate(X_scaled, y_cat, verbose=0)
-    with tempfile.NamedTemporaryFile(suffix='.h5', delete=False) as temp_file:
-        temp_model_path = temp_file.name
-    model_new.save(temp_model_path)
-    with open(temp_model_path, 'rb') as f:
-        model_bytes = f.read()
     try:
-        os.remove(temp_model_path)
-    except:
-        pass
-    le_bytes = pickle.dumps(le_new)
-    scaler_bytes = pickle.dumps(scaler_new)
-    model_doc = {
-        "timestamp": datetime.datetime.now(),
-        "model_data": model_bytes,
-        "label_encoder": le_bytes,
-        "scaler": scaler_bytes,
-        "accuracy": float(overall_accuracy),
-        "loss": float(overall_loss),
-        "classes": le_new.classes_.tolist(),
-        "version": timestamp
-    }
-    cleanup_old_data()
-    models_collection.insert_one(model_doc)
-    return {
-        "message": "Model retrained and updated successfully.",
-        "overall_accuracy": float(overall_accuracy),
-        "overall_loss": float(overall_loss)
-    }
+        print("Starting model retraining process...")
+        
+        # Step 1: Extract and validate ZIP file
+        zip_content = await zipfile_data.read()
+        with zipfile.ZipFile(io.BytesIO(zip_content), 'r') as zip_ref:
+            csv_files = [f for f in zip_ref.namelist() if f.endswith('.csv')]
+            if not csv_files:
+                return {"error": "No CSV file found in the uploaded data."}
+            
+            csv_content = zip_ref.read(csv_files[0])
+            df = pd.read_csv(io.BytesIO(csv_content))
+            
+            # Find label column
+            possible_label_columns = ['label', 'category', 'class', 'target']
+            label_column = None
+            for col in possible_label_columns:
+                if col in df.columns:
+                    label_column = col
+                    break
+            
+            if label_column is None:
+                return {"error": f"No label column found. Available columns: {list(df.columns)}"}
+            
+            print(f"Found {len(df)} records in CSV file")
+            
+            # Step 2: Extract features from audio files
+            features, labels = [], []
+            processed_files = 0
+            total_files = len(df)
+            
+            for _, row in df.iterrows():
+                file = row['filename']
+                label = row[label_column]
+                
+                if file in zip_ref.namelist() and file.endswith(".wav"):
+                    audio_content = zip_ref.read(file)
+                    with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
+                        temp_audio_path = temp_file.name
+                        temp_file.write(audio_content)
+                    
+                    try:
+                        fvec = extract_features(temp_audio_path)
+                        if fvec is not None:
+                            features.append(fvec)
+                            labels.append(label)
+                            
+                            # Store in database
+                            retrain_collection.insert_one({
+                                "filename": file,
+                                "label": label,
+                                "features": fvec.tolist(),
+                                "audio_data": audio_content,
+                                "upload_timestamp": datetime.datetime.now(),
+                                "metadata": row.to_dict()
+                            })
+                            processed_files += 1
+                    finally:
+                        try:
+                            os.remove(temp_audio_path)
+                        except:
+                            pass
+            
+            print(f"Successfully processed {processed_files}/{total_files} audio files")
+        
+        if len(features) < 2:
+            return {"error": f"Not enough valid data to retrain. Only {len(features)} valid samples found."}
+        
+        # Step 3: Prepare data for training
+        X = np.array(features)
+        y = np.array(labels)
+        
+        print(f"Data shape: X={X.shape}, y={y.shape}")
+        print(f"Unique labels: {np.unique(y)}")
+        
+        le_new = LabelEncoder()
+        y_encoded = le_new.fit_transform(y)
+        y_cat = to_categorical(y_encoded)
+        scaler_new = StandardScaler()
+        X_scaled = scaler_new.fit_transform(X)
+        
+        # Split data
+        X_train, X_val, y_train, y_val = train_test_split(X_scaled, y_cat, test_size=0.2, stratify=y_encoded)
+        
+        print(f"Training set: {X_train.shape[0]} samples")
+        print(f"Validation set: {X_val.shape[0]} samples")
+        
+        # Step 4: Data augmentation
+        print("Applying data augmentation...")
+        X_train_augmented = []
+        y_train_augmented = []
+        
+        for i in range(len(X_train)):
+            # Original sample
+            X_train_augmented.append(X_train[i])
+            y_train_augmented.append(y_train[i])
+            
+            # Augmented sample 1: Low noise
+            noise1 = np.random.normal(0, 0.01, X_train[i].shape)
+            X_train_augmented.append(X_train[i] + noise1)
+            y_train_augmented.append(y_train[i])
+            
+            # Augmented sample 2: Medium noise
+            noise2 = np.random.normal(0, 0.02, X_train[i].shape)
+            X_train_augmented.append(X_train[i] + noise2)
+            y_train_augmented.append(y_train[i])
+        
+        X_train = np.array(X_train_augmented)
+        y_train = np.array(y_train_augmented)
+        
+        print(f"Training data augmented from {len(X_scaled)} to {len(X_train)} samples")
+        
+        # Step 5: Load base model and create new model for transfer learning
+        print("Loading base model for transfer learning...")
+        base_model = load_model("audio_classifier_model.h5")
+        
+        # Create new model using transfer learning
+        model_new = Sequential()
+        for layer in base_model.layers[:-1]:
+            model_new.add(layer)
+        model_new.add(Dense(len(le_new.classes_), activation='softmax'))
+        
+        # Configure transfer learning: freeze base layers, train only new output layer
+        print("Configuring transfer learning...")
+        for layer in model_new.layers[:-1]:
+            layer.trainable = False  # Freeze base model layers
+        model_new.layers[-1].trainable = True  # Train only the new output layer
+        
+        # Single training phase with transfer learning
+        print("Starting single-phase training with transfer learning...")
+        optimizer = Adam(learning_rate=0.001)  # Moderate learning rate for transfer learning
+        model_new.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+        
+        # Callbacks for better training
+        reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.2, patience=5, min_lr=1e-8, verbose=1)
+        early_stopping = EarlyStopping(monitor='val_loss', patience=15, restore_best_weights=True, verbose=1)
+        
+        # Single training phase
+        history = model_new.fit(
+            X_train, y_train, 
+            validation_data=(X_val, y_val), 
+            epochs=50,  # Reduced epochs for single phase
+            batch_size=16,
+            callbacks=[reduce_lr, early_stopping],
+            verbose=1
+        )
+        
+        # Extract training metrics
+        train_acc = history.history['accuracy'][-1]
+        val_acc = history.history['val_accuracy'][-1]
+        train_loss = history.history['loss'][-1]
+        val_loss = history.history['val_loss'][-1]
+        
+        print(f"Training completed - Train Acc: {train_acc:.4f}, Val Acc: {val_acc:.4f}")
+        print(f"Final metrics - Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
+        
+        # Step 6: Evaluate final model
+        print("Evaluating final model...")
+        overall_loss, overall_accuracy = model_new.evaluate(X_scaled, y_cat, verbose=0)
+        
+        # Step 7: Save model to database
+        print("Saving model to database...")
+        with tempfile.NamedTemporaryFile(suffix='.h5', delete=False) as temp_file:
+            temp_model_path = temp_file.name
+        
+        model_new.save(temp_model_path)
+        
+        with open(temp_model_path, 'rb') as f:
+            model_bytes = f.read()
+        
+        try:
+            os.remove(temp_model_path)
+        except:
+            pass
+        
+        le_bytes = pickle.dumps(le_new)
+        scaler_bytes = pickle.dumps(scaler_new)
+        
+        model_doc = {
+            "timestamp": datetime.datetime.now(),
+            "model_data": model_bytes,
+            "label_encoder": le_bytes,
+            "scaler": scaler_bytes,
+            "accuracy": float(overall_accuracy),
+            "loss": float(overall_loss),
+            "classes": le_new.classes_.tolist(),
+            "version": timestamp,
+            "training_info": {
+                "transfer_learning": {
+                    "train_accuracy": float(train_acc),
+                    "val_accuracy": float(val_acc),
+                    "train_loss": float(train_loss),
+                    "val_loss": float(val_loss),
+                    "epochs_trained": len(history.history['accuracy']),
+                    "final_epoch": len(history.history['accuracy'])
+                },
+                "final": {
+                    "overall_accuracy": float(overall_accuracy),
+                    "overall_loss": float(overall_loss)
+                }
+            }
+        }
+        
+        cleanup_old_data()
+        models_collection.insert_one(model_doc)
+        
+        print("Model retraining completed successfully!")
+        
+        return {
+            "message": "Model retrained and updated successfully using transfer learning.",
+            "training_summary": {
+                "processed_files": processed_files,
+                "total_files": total_files,
+                "valid_samples": len(features),
+                "unique_classes": len(le_new.classes_),
+                "classes": le_new.classes_.tolist(),
+                "training_approach": "Single-phase transfer learning"
+            },
+            "transfer_learning_results": {
+                "train_accuracy": float(train_acc),
+                "val_accuracy": float(val_acc),
+                "train_loss": float(train_loss),
+                "val_loss": float(val_loss),
+                "epochs_trained": len(history.history['accuracy']),
+                "learning_rate": 0.001,
+                "base_model_layers_frozen": len(model_new.layers) - 1
+            },
+            "final_results": {
+                "overall_accuracy": float(overall_accuracy),
+                "overall_loss": float(overall_loss)
+            }
+        }
+        
+    except Exception as e:
+        print(f"Error during retraining: {str(e)}")
+        return {"error": f"Retraining failed: {str(e)}"}
 
 @app.get("/")
 async def root():
